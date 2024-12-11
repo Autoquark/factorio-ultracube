@@ -642,7 +642,11 @@ function cube_fx.tick(tick)
     end
     local x = 0.5 * (x_min + x_max)
     local y = 0.5 * (y_min + y_max)
-    cubecam.update_position(x, y, z, e)
+    local surface = 1
+    if size > 0 then
+      surface = results[1].surface
+    end
+    cubecam.update_position(x, y, z, e, surface)
   end
 
   if alert_tick then

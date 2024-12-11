@@ -1,3 +1,5 @@
+local factorissimo_compatibility = require("__Ultracube__/scripts/factorissimo_compatibility")
+
 local cubecam = {}
 local cubecam_width = 500
 local cubecam_height = 500
@@ -90,6 +92,27 @@ local function cubecam_open(player, fullscreen)
     maximum_value = #zoom_map,
     style = "cube_cubecam_slider",
   }
+
+  if script.active_mods["factorissimo-2-notnotmelon"] then
+    title.add {
+      type = "sprite-button",
+      name = "cube-cubecam-factorissimo-out",
+      style = "cube_cubecam_fullscreen",
+      sprite = "virtual-signal/up-arrow",
+      hovered_sprite = "cube-fullscreen",
+      clicked_sprite = "cube-fullscreen",
+      --tooltip = {"cube-gui.cubecam-fullscreen"},
+    }
+    title.add {
+      type = "sprite-button",
+      name = "cube-cubecam-factorissimo-in",
+      style = "cube_cubecam_fullscreen",
+      sprite = "virtual-signal/down-arrow",
+      hovered_sprite = "cube-fullscreen",
+      clicked_sprite = "cube-fullscreen",
+      --tooltip = {"cube-gui.cubecam-fullscreen"},
+    }
+  end
   title.add {
     type = "sprite-button",
     name = "cube-cubecam-fullscreen",
@@ -185,6 +208,12 @@ function cubecam.on_click(player, element)
       cubecam_close(player)
       cubecam_open(player, true)
     end
+  elseif element.name == "cube-cubecam-factorissimo-out" then
+    local state = player_state(player)
+    state.factorissimo_view_level = (state.factorissimo_view_level or 0) + 1
+  elseif element.name == "cube-cubecam-factorissimo-in" then
+    local state = player_state(player)
+    state.factorissimo_view_level = (state.factorissimo_view_level or 0) - 1
   end
 end
 
@@ -206,9 +235,10 @@ function cubecam.on_settings_changed(player, setting)
   end
 end
 
-function cubecam.update_position(x, y, z, e)
+function cubecam.update_position(x, y, z, e, surface)
   storage.cubecam_target_x = x
   storage.cubecam_target_y = y
+  storage.cubecam_target_surface = surface
   if e and lock_entity_types[e.type] then
     storage.cubecam_target_e = e
     if vehicle_entity_types[e.type] then
@@ -222,6 +252,13 @@ end
 
 function cubecam.tick()
   -- TODO: don't calculate cubecam if nobody is looking at it.
+
+  -- Don't update the cubecam if we're in a menu or tips & tricks simulation. It's unnecessary and can cause issues due to the
+  -- factorissimo interface not being registered yet
+  if game.simulation then
+    return
+  end
+
   local storage = storage
   local x = storage.cubecam_x or 0
   local y = storage.cubecam_y or 0
@@ -231,9 +268,13 @@ function cubecam.tick()
   local target_z = storage.cubecam_target_z or 1
   local lock_x = storage.cubecam_lock_x
   local lock_y = storage.cubecam_lock_y
+  -- TODO: Maybe this should be the factory? Or add another field for target factory. ATM the entity position within the factory is overriding the camera position when looking at the nauvis surface
   local target_e = storage.cubecam_target_e
   local target_lock = storage.cubecam_target_lock or 0
   local has_target = target_e and target_e.valid
+  local surface = storage.cubecam_target_surface or 1
+
+  local surface_stack = factorissimo_compatibility.get_surface_stack(surface, x, y)
 
   if has_target then
     if target_lock < cubecam_lock_ticks then
@@ -278,7 +319,7 @@ function cubecam.tick()
           type = "minimap",
           name = "cube-cubecam-camera",
           style = "cube_cubecam_minimap",
-          surface_index = 1,
+          surface_index = surface.index,
           position = {0, 0},
         }
         state.camera = nil
@@ -290,18 +331,37 @@ function cubecam.tick()
           type = "camera",
           name = "cube-cubecam-camera",
           style = "cube_cubecam_camera",
-          surface_index = 1,
+          surface_index = surface.index,
           position = {0, 0},
         }
         state.minimap = nil
         state.camera = camera
       end
+  
+      local view_level = state.factorissimo_view_level or 1
+      if view_level > #surface_stack then
+        view_level = #surface_stack
+      end
+      if view_level < 1 then
+        view_level = 1
+      end
+      state.factorissimo_view_level = view_level
+      local surface_data = surface_stack[view_level]
+
+      -- If we're viewing a factory interior, ignore the calculated x and y and just centre on the middle of the factory
+      if view_level < #surface_stack then
+        x = surface_data.factory.inside_x
+        y = surface_data.factory.inside_y
+      end
+
       if camera then
         camera.position = {x, y}
         camera.zoom = zoom
+        camera.surface_index = surface_data.surface.index
       elseif minimap then
         minimap.position = {x, y}
         minimap.zoom = zoom * 16
+        minimap.surface_index = surface_data.surface.index
       end
     end
   end

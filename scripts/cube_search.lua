@@ -2,6 +2,7 @@ require("__Ultracube__/scripts/lib")
 local cube_management = require("__Ultracube__/scripts/cube_management")
 local entity_cache = require("__Ultracube__/scripts/entity_cache")
 local if_this_crashes_you_have_incompatible_mods = require("__Ultracube__/scripts/if_this_crashes_you_have_incompatible_mods")
+local factorissimo_compatibility = require("__Ultracube__/scripts/factorissimo_compatibility")
 
 local cube_ultradense = cube_management.cubes.ultradense
 local cube_dormant = cube_management.cubes.dormant
@@ -746,7 +747,15 @@ local function fill_result(result)
   local entity_type = entity.type
 
   result.surface = entity.surface
-  result.position = entity.position
+
+  -- If the cube is inside one or factories, use the position of the outermost factory on the nauvis surface
+  local surface_stack = factorissimo_compatibility.get_surface_stack(result.surface, entity.position.x, entity.position.y)
+  local outermost = surface_stack[#surface_stack]
+
+  result.position = { x = outermost.x, y = outermost.y }
+  -- We don't want cubecam entity tracking to kick in if the cube is inside a factory; when viewing the exterior, the factory isn't going to move,
+  -- and when viewing the interior, the camera is fixed on the factory centre
+  result.entity = nil
   result.positions = nil
   result.height = 0
   result.hidden = false
