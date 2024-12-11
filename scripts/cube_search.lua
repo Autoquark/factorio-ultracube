@@ -753,9 +753,12 @@ local function fill_result(result)
   local outermost = surface_stack[#surface_stack]
 
   result.position = { x = outermost.x, y = outermost.y }
+  result.surface_stack = surface_stack
   -- We don't want cubecam entity tracking to kick in if the cube is inside a factory; when viewing the exterior, the factory isn't going to move,
   -- and when viewing the interior, the camera is fixed on the factory centre
-  result.entity = nil
+  if #surface_stack > 1 then
+    result.entity = nil
+  end
   result.positions = nil
   result.height = 0
   result.hidden = false

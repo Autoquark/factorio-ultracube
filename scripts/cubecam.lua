@@ -235,10 +235,10 @@ function cubecam.on_settings_changed(player, setting)
   end
 end
 
-function cubecam.update_position(x, y, z, e, surface)
+function cubecam.update_position(x, y, z, e, surface_stack)
   storage.cubecam_target_x = x
   storage.cubecam_target_y = y
-  storage.cubecam_target_surface = surface
+  storage.cubecam_surface_stack = surface_stack
   if e and lock_entity_types[e.type] then
     storage.cubecam_target_e = e
     if vehicle_entity_types[e.type] then
@@ -268,13 +268,10 @@ function cubecam.tick()
   local target_z = storage.cubecam_target_z or 1
   local lock_x = storage.cubecam_lock_x
   local lock_y = storage.cubecam_lock_y
-  -- TODO: Maybe this should be the factory? Or add another field for target factory. ATM the entity position within the factory is overriding the camera position when looking at the nauvis surface
   local target_e = storage.cubecam_target_e
   local target_lock = storage.cubecam_target_lock or 0
   local has_target = target_e and target_e.valid
-  local surface = storage.cubecam_target_surface or 1
-
-  local surface_stack = factorissimo_compatibility.get_surface_stack(surface, x, y)
+  local surface_stack = storage.cubecam_surface_stack
 
   if has_target then
     if target_lock < cubecam_lock_ticks then
@@ -319,7 +316,7 @@ function cubecam.tick()
           type = "minimap",
           name = "cube-cubecam-camera",
           style = "cube_cubecam_minimap",
-          surface_index = surface.index,
+          surface_index = 1,
           position = {0, 0},
         }
         state.camera = nil
@@ -331,7 +328,7 @@ function cubecam.tick()
           type = "camera",
           name = "cube-cubecam-camera",
           style = "cube_cubecam_camera",
-          surface_index = surface.index,
+          surface_index = 1,
           position = {0, 0},
         }
         state.minimap = nil
