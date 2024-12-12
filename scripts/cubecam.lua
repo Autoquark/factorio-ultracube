@@ -99,8 +99,6 @@ local function cubecam_open(player, fullscreen)
       name = "cube-cubecam-factorissimo-out",
       style = "cube_cubecam_fullscreen",
       sprite = "virtual-signal/up-arrow",
-      hovered_sprite = "cube-fullscreen",
-      clicked_sprite = "cube-fullscreen",
       --tooltip = {"cube-gui.cubecam-fullscreen"},
     }
     title.add {
@@ -108,8 +106,6 @@ local function cubecam_open(player, fullscreen)
       name = "cube-cubecam-factorissimo-in",
       style = "cube_cubecam_fullscreen",
       sprite = "virtual-signal/down-arrow",
-      hovered_sprite = "cube-fullscreen",
-      clicked_sprite = "cube-fullscreen",
       --tooltip = {"cube-gui.cubecam-fullscreen"},
     }
   end
