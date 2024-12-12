@@ -94,14 +94,14 @@ local function cubecam_open(player, fullscreen)
   }
 
   if script.active_mods["factorissimo-2-notnotmelon"] then
-    title.add {
+    state.factorissimo_out_button = title.add {
       type = "sprite-button",
       name = "cube-cubecam-factorissimo-out",
       style = "cube_cubecam_fullscreen",
       sprite = "virtual-signal/up-arrow",
       --tooltip = {"cube-gui.cubecam-fullscreen"},
     }
-    title.add {
+    state.factorissimo_in_button = title.add {
       type = "sprite-button",
       name = "cube-cubecam-factorissimo-in",
       style = "cube_cubecam_fullscreen",
@@ -109,6 +109,7 @@ local function cubecam_open(player, fullscreen)
       --tooltip = {"cube-gui.cubecam-fullscreen"},
     }
   end
+  
   title.add {
     type = "sprite-button",
     name = "cube-cubecam-fullscreen",
@@ -249,12 +250,6 @@ end
 function cubecam.tick()
   -- TODO: don't calculate cubecam if nobody is looking at it.
 
-  -- Don't update the cubecam if we're in a menu or tips & tricks simulation. It's unnecessary and can cause issues due to the
-  -- factorissimo interface not being registered yet
-  if game.simulation then
-    return
-  end
-
   local storage = storage
   local x = storage.cubecam_x or 0
   local y = storage.cubecam_y or 0
@@ -352,10 +347,20 @@ function cubecam.tick()
         camera.zoom = zoom
         camera.surface_index = surface_data.surface.index
       elseif minimap then
-        minimap.position = {x, y}
+       minimap.position = {x, y}
         minimap.zoom = zoom * 16
         minimap.surface_index = surface_data.surface.index
       end
+      
+      if script.active_mods["factorissimo-2-notnotmelon"] then
+        if state.factorissimo_in_button.valid then
+          state.factorissimo_in_button.enabled = view_level ~= 1
+        end
+        if state.factorissimo_out_button.valid then
+          state.factorissimo_out_button.enabled = view_level < #surface_stack
+        end
+      end
+      
     end
   end
 end
